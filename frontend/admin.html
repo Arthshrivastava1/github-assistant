@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Console | Codebase Knowledge AI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --panel: #0f172a;
+            --ink: #0f172a;
+            --muted: #94a3b8;
+            --brand: #6366f1; /* Changed from red to professional indigo */
+            --border: rgba(0, 0, 0, 0.08);
+            --ok: #10b981;
+            --warn: #fbbf24;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            background: #f8fafc;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 10px;
+        }
+
+        .brand-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--brand);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .brand h1 {
+            font-size: 34px;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .brand p {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .nav-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 56px;
+        }
+
+        .nav-link {
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 12px 14px;
+            text-decoration: none;
+            color: #475569;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(0, 0, 0, 0.04);
+            color: #0f172a;
+        }
+
+        .nav-link.active {
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--brand);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .sidebar-foot {
+            margin-top: auto;
+            padding: 8px 10px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .main {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .topbar {
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            padding: 26px 38px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar h2 {
+            font-size: 34px;
+            line-height: 1.1;
+        }
+
+        .health {
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 8px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .health.ok {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .health.warn {
+            background: rgba(251, 191, 36, 0.1);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        .content {
+            padding: 28px 38px 34px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(140px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0,0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            font-size: 34px;
+            line-height: 1;
+            font-weight: 800;
+        }
+
+        .panels {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            min-height: 380px;
+        }
+
+        .panel {
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .panel-title {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .subtle {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: rgba(0, 0, 0, 0.03);
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            font-size: 12px;
+            text-align: left;
+            padding: 14px 28px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        tbody td {
+            padding: 16px 28px;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+            font-size: 14px;
+            color: var(--ink);
+            vertical-align: top;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .activity-tag {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border-radius: 6px;
+            padding: 6px 12px;
+        }
+
+        .activity-high { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .activity-medium { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); }
+        .activity-low { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+
+        .side-panel {
+            padding: 20px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .metric {
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 12px;
+            padding: 16px;
+            background: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric h4 {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+        }
+
+        .metric .v {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .download {
+            margin-top: auto;
+            text-decoration: none;
+            color: var(--brand);
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .muted-row {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        @media (max-width: 1120px) {
+            .layout { grid-template-columns: 92px 1fr; }
+            .brand-text,
+            .nav-link span,
+            .sidebar-foot { display: none; }
+            .brand { justify-content: center; }
+            .nav-link { justify-content: center; padding: 14px 10px; }
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+            .panels { grid-template-columns: 1fr; }
+            .topbar h2 { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-badge"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="brand-text">
+                    <h1 style="font-size: 20px; font-weight: 800; letter-spacing: 0.05em; line-height: 1; text-transform: uppercase;">Core Control</h1>
+                    <p style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Administrative Interface</p>
+                </div>
+            </div>
+
+            <nav class="nav-group">
+                <a class="nav-link active" href="#" id="nav-dashboard" onclick="loadPage('admin-dashboard.html', this); return false;"><i class="fa-solid fa-chart-column"></i><span>Dashboard</span></a>
+                <a class="nav-link" href="#" onclick="loadPage('admin-users.html', this); return false;"><i class="fa-solid fa-users"></i><span>User Management</span></a>
+                <a class="nav-link" href="#" onclick="loadPage('admin-analytics.html', this); return false;"><i class="fa-solid fa-database"></i><span>Database Health</span></a>
+                <a class="nav-link" href="#" onclick="loadPage('admin-clusters.html', this); return false;"><i class="fa-solid fa-microchip"></i><span>Node Clusters</span></a>
+                <a class="nav-link" href="#" onclick="loadPage('admin-settings.html', this); return false;"><i class="fa-solid fa-cog"></i><span>Global Settings</span></a>
+                
+                <a class="nav-link" href="#" onclick="loadPage('admin-profile.html', this); return false;" style="margin-top: 32px;"><i class="fa-solid fa-user-shield"></i><span>My Account</span></a>
+                <a class="nav-link" href="index.html" style="margin-top: 8px; color: #475569; transition: all 0.2s;" onmouseover="this.style.color='#ef4444'; this.style.background='rgba(239, 68, 68, 0.05)'" onmouseout="this.style.color='#475569'; this.style.background='transparent'"><i class="fa-solid fa-power-off"></i><span>Terminate Session</span></a>
+            </nav>
+
+            <div class="sidebar-foot">Admin session active</div>
+        </aside>
+
+        <main class="main" style="display: flex; flex-direction: column;">
+            <iframe id="content-frame" style="display: block; width: 100%; height: 100%; border: none; flex: 1;"></iframe>
+        </main>
+    </div>
+
+    <script>
+        function loadPage(url, element) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            if(element) element.classList.add('active');
+            
+            if(url === 'dashboard') url = 'admin-dashboard.html';
+            
+            const frame = document.getElementById('content-frame');
+            frame.style.opacity = '0';
+            frame.style.transform = 'translateY(10px)';
+            frame.style.transition = 'none';
+
+            setTimeout(() => {
+                frame.src = url + "?v=" + new Date().getTime();
+                frame.onload = () => {
+                    frame.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                    frame.style.opacity = '1';
+                    frame.style.transform = 'translateY(0)';
+                };
+            }, 50);
+
+            window.location.hash = url;
+        }
+
+        function restoreFromHash() {
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                const link = Array.from(document.querySelectorAll('.nav-link')).find(a => a.getAttribute('onclick') && a.getAttribute('onclick').includes(hash));
+                if (link) {
+                    loadPage(hash, link);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const restored = restoreFromHash();
+            if(!restored) {
+                // By default, load the admin-dashboard.html
+                loadPage('admin-dashboard.html', document.getElementById('nav-dashboard'));
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const elements = document.querySelectorAll(".admin-card, .repo-card, .stat-card, section, .cluster-node, .log-terminal, table, .complexity-map, .chat-interface");
+            elements.forEach((el, index) => {
+                el.style.opacity = "0";
+                el.style.transform = "translateY(10px)";
+                el.style.transition = "all 0.3s ease-out";
+                setTimeout(() => {
+                    el.style.opacity = "1";
+                    el.style.transform = "translateY(0)";
+                }, 10 + (index * 15)); // Staggered delay
+            });
+        });
+    </script>
+</body>
+
+</html>
+
+

@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Interface | Codebase Knowledge AI</title>
+    <link rel="stylesheet" href="style.css?v=professional-v2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        .chat-main { position: relative !important; height: 100vh !important; overflow: hidden !important; }
+        .chat-container { height: 100%; overflow-y: auto; padding: 60px 60px 160px 60px; scroll-behavior: smooth; position: relative; }
+        .chat-input-area { position: absolute; bottom: 0; left: 0; right: 0; padding: 32px 60px; background: linear-gradient(to top, #000 80%, transparent); z-index: 100; box-sizing: border-box; }
+        .input-wrapper { position: relative; background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 8px; transition: var(--transition-smooth); }
+        .input-wrapper:focus-within { border-color: var(--primary-brand); box-shadow: var(--shadow-glow); }
+        #chat-input { background: transparent; border: none; color: #0f172a; padding: 12px 16px; width: calc(100% - 60px); font-size: 15px; outline: none; }
+        .send-btn { position: absolute; right: 8px; top: 8px; bottom: 8px; width: 44px; background: var(--primary-brand); border: none; border-radius: 14px; color: white; cursor: pointer; transition: var(--transition-smooth); }
+        .send-btn:hover { transform: scale(1.05); background: white; color: var(--primary-brand); }
+        .orb-container { position: absolute; top: 40px; right: 40px; }
+        .orb { width: 48px; height: 48px; border-radius: 50%; background: var(--primary-brand); filter: blur(15px); opacity: 0.3; animation: pulse 4s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.2; } 50% { transform: scale(1.5); opacity: 0.4; } }
+        .pinned-section { display: flex; flex-direction: column; margin-top: 32px; }
+        .pinned-item { background: rgba(0,0,0,0.03); border: 1px solid rgba(0, 0, 0,0.08); border-radius: 10px; padding: 14px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; display: flex; align-items: center; }
+        .pinned-item:hover { background: rgba(0, 0, 0,0.08); border-color: var(--primary-brand); transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        /* Markdown prose styles inside AI bubbles */
+        .ai-prose { line-height: 1.7; font-size: 14px; color: var(--text-secondary); }
+        .ai-prose p { margin: 0 0 10px; }
+        .ai-prose p:last-child { margin-bottom: 0; }
+        .ai-prose h1,.ai-prose h2,.ai-prose h3 { color: #0f172a; font-weight: 700; margin: 14px 0 6px; }
+        .ai-prose code { background: rgba(0, 0, 0,0.08); padding: 2px 6px; border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 12px; color: #a5b4fc; }
+        .ai-prose pre { background: #0d0d14; border: 1px solid rgba(0, 0, 0,0.1); border-radius: 10px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; }
+        .ai-prose pre code { background: none; padding: 0; color: inherit; font-size: 12px; }
+        .ai-prose ul,.ai-prose ol { padding-left: 20px; margin: 8px 0; }
+        .ai-prose li { margin-bottom: 4px; color: var(--text-secondary); }
+        .ai-prose strong { color: #0f172a; font-weight: 700; }
+        .ai-prose blockquote { border-left: 3px solid var(--primary-brand); padding-left: 12px; color: var(--text-muted); margin: 8px 0; }
+        .ai-prose a { color: var(--primary-brand); }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="nav-rail">
+            <div class="rail-item" onclick="window.location.href='user-dashboard.html'"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div class="rail-item active"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="rail-item" onclick="window.location.href='user-analytics.html' + (new URLSearchParams(window.location.search).get('repo') ? '?repo=' + new URLSearchParams(window.location.search).get('repo') : '')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></div>
+            <div id="user-avatar" class="rail-item" style="margin-top: auto; background: var(--surface-elevated); border: 1px solid var(--border-subtle); font-weight: 800;">U</div>
+        </aside>
+
+        <aside class="sidebar">
+            <div style="margin-bottom: 32px; display: flex; align-items: center; gap: 16px;">
+                <div>
+                    <h1 style="font-size: 14px; font-weight: 800; letter-spacing: 0.05em; line-height: 1;" id="repo-name-display">REPOSITORY</h1>
+                    <span style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">NEURAL CONTEXT</span>
+                </div>
+            </div>
+
+            <button onclick="startNewChat()" style="background: var(--primary-brand); color: white; border: none; padding: 12px; width: 100%; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(99,102,241,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(99,102,241,0.3)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(99,102,241,0.2)';">
+                <i class="fas fa-plus"></i> New Chat
+            </button>
+
+            <nav style="display: flex; flex-direction: column; gap: 10px; margin-top: 56px;">
+                <button class="sidebar-nav-btn active" onclick="window.location.reload()"><i class="fas fa-comment-alt"></i> Intelligence Chat</button>
+                <button class="sidebar-nav-btn" onclick="toggleAnalysis()"><i class="fas fa-project-diagram"></i> Architecture Map</button>
+                <button class="sidebar-nav-btn" onclick="toggleDeepSearch()"><i class="fas fa-search-plus"></i> Deep Code Search</button>
+                <button class="sidebar-nav-btn" onclick="toggleInquiryHistory()"><i class="fas fa-history"></i> Inquiry History</button>
+            </nav>
+
+            <div class="pinned-section" style="margin-top: auto;" id="critical-components-section">
+                <div class="panel-section-title">Critical Components</div>
+                <div id="dynamic-critical-components">
+                    <!-- Files will be injected here dynamically -->
+                </div>
+            </div>
+        </aside>
+
+        <main class="chat-main">
+            <div class="chat-container" id="chat-messages">
+                <div class="orb-container"><div class="orb"></div></div>
+                
+                <header style="margin-bottom: 80px; text-align: center;">
+<h2 style="font-size: 32px; font-weight: 800;">Direct Repository Inquiry</h2>
+                    <p style="color: var(--text-secondary); max-width: 500px; margin: 12px auto 0;">Your codebase is fully indexed and ready for deep reasoning. Ask about architectural patterns, data flows, or logical implementations.</p>
+                </header>
+
+                <div class="message ai">
+                    <div style="font-size: 12px; font-weight: 800; color: var(--primary-brand); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Neural Engine</div>
+                    Intelligence link established. How can I assist you with the codebase architecture today?
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <input type="text" id="chat-input" placeholder="Ask anything about the codebase... (e.g. 'How does the auth flow work?')">
+                    <button class="send-btn" id="send-btn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+                <div style="display: flex; gap: 16px; margin-top: 16px; font-size: 11px; color: rgba(255, 255, 255, 0.7);">
+                    <span><i class="fas fa-keyboard" style="margin-right: 4px;"></i> Enter to Transmit</span>
+                    <span><i class="fas fa-terminal" style="margin-right: 4px;"></i> Markdown Supported</span>
+                    <span id="typing-indicator" style="margin-left: auto; display: none; color: white;">Neural engine is planning...</span>
+                </div>
+            </div>
+        </main>
+
+        <aside class="right-panel" style="display: flex; flex-direction: column; height: 100vh; padding-bottom: 40px; box-sizing: border-box;">
+            <div class="panel-section-title" style="margin-bottom: 16px;">Active Visualizer</div>
+            <div id="visualizer-preview" style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 20px; flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; min-height: 400px; overflow: hidden;">
+                <i class="fas fa-project-diagram" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
+                <p style="font-size: 13px; color: var(--text-muted);">Architecture maps will be generated here during deep analysis.</p>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 32px;" onclick="window.location.href='user-analytics.html' + (repoId ? '?repo=' + repoId : '')"><i class="fas fa-external-link-alt" style="margin-right: 8px;"></i> Open Full Analytics</button>
+        </aside>
+
+        <!-- History Modal Overlay -->
+        <div id="history-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+            <div style="background: var(--surface-base); border: 1px solid var(--border-subtle); border-radius: 24px; width: 90%; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+                <div style="padding: 24px 32px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 12px;"><i class="fas fa-history" style="color: var(--primary-brand);"></i> Inquiry History</h2>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Review past intelligence sessions and redirect them to the active chat.</p>
+                    </div>
+                    <button onclick="closeHistoryModal()" style="background: rgba(0,0,0,0.05); border: none; color: var(--text-muted); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: all 0.2s;"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="history-list" style="padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;">
+                    <!-- History items injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === AUTH GUARD ===
+        (function() {
+            const userId = localStorage.getItem('auth_user_id');
+            if (!userId) {
+                window.location.href = 'login.html';
+            }
+        })();
+        // Configure marked.js (v9+ API — highlight option was removed, use marked.use() renderer)
+        marked.use({
+            breaks: true,
+            gfm: true,
+            renderer: {
+                code(codeStr, lang) {
+                    const text = typeof codeStr === 'object' ? codeStr.text : codeStr;
+                    const language = (typeof codeStr === 'object' ? codeStr.lang : lang) || '';
+                    const cleanLang = language.split(/\s/)[0];
+                    try {
+                        if (cleanLang && hljs.getLanguage(cleanLang)) {
+                            const highlighted = hljs.highlight(text, { language: cleanLang }).value;
+                            return `<pre><code class="hljs language-${cleanLang}">${highlighted}</code></pre>`;
+                        }
+                        const highlighted = hljs.highlightAuto(text).value;
+                        return `<pre><code class="hljs">${highlighted}</code></pre>`;
+                    } catch (e) {
+                        return `<pre><code>${text}</code></pre>`;
+                    }
+                }
+            }
+        });
+
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#000000',
+                primaryTextColor: '#ffffff',
+                lineColor: '#ffffff',
+                background: '#000000',
+                mainBkg: '#000000',
+                nodeBorder: '#ffffff'
+            }
+        });
+
+        function renderMarkdown(text) {
+            if (!text || !text.trim()) return '';
+            try {
+                return marked.parse(text);
+            } catch(e) {
+                return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+            }
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const repoId = params.get('repo');
+        
+        const currentUserId = localStorage.getItem('auth_user_id') || 'guest';
+        const chatHistoryKey = `chat_history_${currentUserId}_${repoId}`;
+
+        function startNewChat() {
+            if (!repoId) return;
+            sessionStorage.removeItem(chatHistoryKey);
+            window.location.reload();
+        }
+
+        function askAboutComponent(filename) {
+            const inputField = document.getElementById('chat-input');
+            const sendButton = document.getElementById('send-btn');
+            inputField.value = `Explain the architecture and purpose of ${filename}`;
+            sendButton.click();
+        }
+
+        async function loadRepoInfo() {
+            if (!repoId) {
+                // Dynamically build a "Chat Hub" interface
+                document.querySelector('.sidebar').style.display = 'none';
+                document.querySelector('.right-panel').style.display = 'none';
+                document.querySelector('.chat-input-area').style.display = 'none';
+                document.querySelector('.app-shell').style.gridTemplateColumns = '80px 1fr';
+                
+                const chatContainer = document.getElementById('chat-messages');
+                chatContainer.innerHTML = `
+                    <div style="max-width: 1200px; margin: 0 auto; width: 100%;">
+                        <header style="margin-bottom: 60px; text-align: left;">
+                            <h2 style="font-size: 48px; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.02em;">Select Repository</h2>
+                            <p style="color: var(--text-secondary); font-size: 18px;">Choose an indexed codebase to initiate a neural chat session.</p>
+                        </header>
+                        <div id="hub-repo-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;">
+                            <div style="color: var(--text-muted); font-size: 14px;">Loading available repositories...</div>
+                        </div>
+
+                        <!-- Spacer Fillers to look professional -->
+                        <div style="margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                            <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 20px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                                <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center;"><i class="fas fa-lightbulb" style="color: #fbbf24; margin-right: 12px; font-size: 24px;"></i> Inquiry Best Practices</h3>
+                                <ul style="color: var(--text-muted); font-size: 14px; line-height: 2; padding-left: 20px; margin: 0;">
+                                    <li>Ask specific questions about architectural patterns.</li>
+                                    <li>Use the Deep Code Search for cross-file tracing.</li>
+                                    <li>Request markdown code blocks for implementation details.</li>
+                                    <li>Open the Architecture Map to visualize dependencies.</li>
+                                </ul>
+                            </div>
+                            <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 20px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                                <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center;"><i class="fas fa-network-wired" style="color: var(--primary-brand); margin-right: 12px; font-size: 24px;"></i> Neural Engine Status</h3>
+                                <div style="display: flex; flex-direction: column; gap: 16px; font-size: 14px;">
+                                    <div style="display: flex; justify-content: space-between; color: var(--text-muted); align-items: center;"><span>Vector Database</span> <span style="color: #22c55e; font-weight: 800; background: rgba(34,197,94,0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px;"><i class="fas fa-circle" style="font-size: 8px; margin-right: 4px; vertical-align: middle;"></i> ONLINE</span></div>
+                                    <div style="display: flex; justify-content: space-between; color: var(--text-muted); align-items: center;"><span>Inference Model</span> <span style="color: #22c55e; font-weight: 800; background: rgba(34,197,94,0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px;"><i class="fas fa-circle" style="font-size: 8px; margin-right: 4px; vertical-align: middle;"></i> OPTIMIZED</span></div>
+                                    <div style="display: flex; justify-content: space-between; color: var(--text-muted); align-items: center;"><span>Context Window</span> <span style="color: #0f172a; font-weight: 700; background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px;">128K TOKENS</span></div>
+                                    <div style="display: flex; justify-content: space-between; color: var(--text-muted); align-items: center;"><span>Base Latency</span> <span style="color: #0f172a; font-weight: 700; background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px;">~24ms</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                try {
+                    const userId = localStorage.getItem('auth_user_id');
+                    const response = await fetch('/api/repos', {
+                        headers: userId ? { 'X-User-Id': userId } : {}
+                    });
+                    if (response.ok) {
+                        const repos = await response.json();
+                        const container = document.getElementById('hub-repo-list');
+                        if (repos.length === 0) {
+                            container.innerHTML = '<div style="color: var(--text-muted); font-size: 14px;">No repositories indexed yet. Please go to the Dashboard to index one.</div>';
+                            return;
+                        }
+                        container.innerHTML = repos.map(repo => `
+                            <div onclick="window.location.href='chat.html?repo=${repo.id}'" style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 20px; padding: 24px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onmouseover="this.style.borderColor='var(--primary-brand)'; this.style.transform='translateY(-6px)'; this.style.boxShadow='0 10px 40px rgba(99,102,241,0.1)';" onmouseout="this.style.borderColor='var(--border-subtle)'; this.style.transform='none'; this.style.boxShadow='none';">
+                                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+                                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(99,102,241,0.1); color: var(--primary-brand); display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fas fa-folder-open"></i></div>
+                                    <h3 style="font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${repo.name}</h3>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-muted); word-break: break-all; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${repo.url}</div>
+                                <div style="display: inline-block; font-size: 11px; font-weight: 800; color: #22c55e; background: rgba(34,197,94,0.1); padding: 6px 10px; border-radius: 8px; letter-spacing: 0.05em;"><i class="fas fa-check-circle" style="margin-right: 4px;"></i> READY FOR CHAT</div>
+                            </div>
+                        `).join('');
+                    }
+                } catch(err) {}
+                return;
+            }
+            
+            // Restore chat history from sessionStorage (per-user)
+            const savedChat = sessionStorage.getItem(chatHistoryKey);
+            if (savedChat) {
+                document.getElementById('chat-messages').innerHTML = savedChat;
+                const chatBox = document.getElementById('chat-messages');
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            try {
+                const userId = localStorage.getItem('auth_user_id');
+                const headers = userId ? { 'X-User-Id': userId } : {};
+                
+                const fetchRepos = fetch('/api/repos', { headers }).then(r => r.ok ? r.json() : []);
+                const fetchFiles = fetch(`/api/repos/${repoId}/files`).then(r => r.ok ? r.json() : null);
+                const fetchStats = fetch(`/api/repos/${repoId}/status`).then(r => r.ok ? r.json() : null);
+                
+                const [repos, filesData, stats] = await Promise.all([fetchRepos, fetchFiles, fetchStats]);
+                
+                const repo = repos.find(r => r.id === repoId);
+                if (repo) {
+                    document.getElementById('repo-name-display').innerText = repo.name.toUpperCase();
+                }
+                
+                if (filesData && filesData.files && filesData.files.length > 0) {
+                    const container = document.getElementById('dynamic-critical-components');
+                    const topFiles = filesData.files.slice(0, 3);
+                    const colors = ['var(--primary-brand)', 'var(--accent-blue)', 'var(--accent-purple)'];
+                    container.innerHTML = topFiles.map((f, i) => `
+                        <div class="pinned-item" onclick="askAboutComponent('${f}')">
+                            <i class="fas fa-file-code" style="margin-right: 12px; color: ${colors[i%3]}; font-size: 16px;"></i> 
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${f}">${f}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('critical-components-section').style.display = 'none';
+                }
+                
+                if (stats) {
+                    document.getElementById('stat-chunks').innerText = stats.chunks_created || 0;
+                    document.getElementById('stat-links').innerText = stats.graph_edges || 0;
+                }
+            } catch (err) {}
+        }
+
+        async function loadProfile() {
+            try {
+                const userId = localStorage.getItem('auth_user_id');
+                const response = await fetch('/api/user/profile', {
+                    headers: userId ? { 'X-User-Id': userId } : {}
+                });
+                if (response.ok) {
+                    const profile = await response.json();
+                    if (profile && profile.full_name) {
+                        document.getElementById('user-avatar').innerText = profile.full_name.charAt(0).toUpperCase();
+                    }
+                }
+            } catch (err) {}
+        }
+
+        document.getElementById('send-btn').addEventListener('click', sendMessage);
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // UI Update
+            const chatBox = document.getElementById('chat-messages');
+            chatBox.innerHTML += `
+                <div class="message user">
+                    <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Operator</div>
+                    ${message}
+                </div>
+            `;
+            input.value = '';
+            document.getElementById('typing-indicator').style.display = 'block';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const userId = localStorage.getItem('auth_user_id');
+                const response = await fetch(`/api/repos/${repoId}/query`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        ...(userId ? { 'X-User-Id': userId } : {})
+                    },
+                    body: JSON.stringify({ query: message })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('typing-indicator').style.display = 'none';
+                    const answerHtml = data.answer && data.answer.trim()
+                        ? renderMarkdown(data.answer)
+                        : '<span style="color: var(--text-muted); font-style: italic;">The Neural Engine returned an empty response. Try rephrasing your question or check the server logs.</span>';
+                    chatBox.innerHTML += `
+                        <div class="message ai">
+                            <div style="font-size: 12px; font-weight: 800; color: var(--primary-brand); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Neural Engine</div>
+                            <div class="ai-prose">${answerHtml}</div>
+                        </div>
+                    `;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                } else {
+                    document.getElementById('typing-indicator').style.display = 'none';
+                    chatBox.innerHTML += `
+                        <div class="message ai" style="border-color: #ef4444;">
+                            <div style="font-size: 12px; font-weight: 800; color: #ef4444; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">System Error</div>
+                            Failed to generate response. Please check server logs.
+                        </div>
+                    `;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            } catch (err) {
+                document.getElementById('typing-indicator').style.display = 'none';
+                chatBox.innerHTML += `
+                    <div class="message ai" style="border-color: #ef4444;">
+                        <div style="font-size: 12px; font-weight: 800; color: #ef4444; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Connection Error</div>
+                        Unable to connect to the Neural Engine.
+                    </div>
+                `;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+            
+            // Save chat history to sessionStorage (per-user)
+            sessionStorage.setItem(chatHistoryKey, chatBox.innerHTML);
+        }
+
+        async function toggleAnalysis() {
+            if (!repoId) return;
+            try {
+                const visualizer = document.getElementById('visualizer-preview');
+                visualizer.innerHTML = '<p style="color: var(--text-muted); padding: 20px;">Loading architecture map...</p>';
+                const response = await fetch(`/api/repos/${repoId}/architecture-mermaid`);
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    visualizer.innerHTML = `
+                        <div style="position: absolute; top: 10px; right: 10px; z-index: 10;">
+                            <button class="btn btn-secondary" onclick="downloadMermaidImage()" style="padding: 6px 12px; font-size: 11px; display: flex; gap: 6px; align-items: center; background: rgba(0,0,0,0.1); border: 1px solid var(--border-subtle); border-radius: 6px; color: white; cursor: pointer;" title="Download Map (PNG)">
+                                <i class="fas fa-download"></i> PNG
+                            </button>
+                        </div>
+                        <div class="mermaid" id="mermaid-container" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; overflow: auto; background: #000000; border-radius: 12px;">
+                            ${data.mermaid_code}
+                        </div>
+                    `;
+                    
+                    setTimeout(() => {
+                        try {
+                            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                        } catch(e) {
+                            console.error("Mermaid parsing error", e);
+                        }
+                    }, 50);
+                } else {
+                    visualizer.innerHTML = '<p style="color: #ef4444; padding: 20px;">Failed to load architectural map.</p>';
+                }
+            } catch (err) {
+                alert("Neural Visualizer error.");
+            }
+        }
+
+        function downloadMermaidImage() {
+            const svg = document.querySelector('#mermaid-container svg');
+            if (!svg) {
+                alert('Architecture map not fully rendered yet.');
+                return;
+            }
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+            
+            const b64 = btoa(unescape(encodeURIComponent(svgData)));
+            img.src = "data:image/svg+xml;base64," + b64;
+            
+            img.onload = function() {
+                // Ensure dimensions are large enough
+                canvas.width = Math.max(img.width || 800, svg.viewBox?.baseVal?.width || 800);
+                canvas.height = Math.max(img.height || 600, svg.viewBox?.baseVal?.height || 600);
+                
+                // Dark background
+                ctx.fillStyle = "#000000"; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const pngFile = canvas.toDataURL("image/png");
+                
+                const downloadLink = document.createElement("a");
+                downloadLink.download = "architecture_map.png";
+                downloadLink.href = pngFile;
+                downloadLink.click();
+            };
+        }
+
+        async function toggleDeepSearch() {
+            if (!repoId) return;
+            const visualizer = document.getElementById('visualizer-preview');
+            visualizer.innerHTML = `
+                <div style="width: 100%; text-align: left; display: flex; flex-direction: column; height: 100%;">
+                    <h3 style="margin-bottom: 12px;">Deep Code Search</h3>
+                    <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                        <input type="text" id="search-input" placeholder="Search code/symbols..." style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); color: #0f172a; border-radius: 6px;">
+                        <button onclick="performDeepSearch()" style="background: var(--primary-brand); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Search</button>
+                    </div>
+                    <div id="search-results" style="flex: 1; overflow-y: auto; font-size: 11px; text-align: left;"></div>
+                </div>
+            `;
+            // Add enter key support
+            document.getElementById('search-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performDeepSearch();
+            });
+        }
+
+        async function performDeepSearch() {
+            const input = document.getElementById('search-input').value.trim();
+            if (!input) return;
+            const resContainer = document.getElementById('search-results');
+            resContainer.innerHTML = '<p style="color: var(--text-muted);">Searching repository...</p>';
+            try {
+                const response = await fetch(`/api/repos/${repoId}/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: input })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (!data.results || data.results.length === 0) {
+                        resContainer.innerHTML = '<p style="color: var(--text-muted);">No results found.</p>';
+                        return;
+                    }
+                    let html = '';
+                    data.results.forEach(r => {
+                        html += `<div style="background: rgba(0,0,0,0.05); padding: 8px; margin-bottom: 8px; border-radius: 6px; border-left: 2px solid var(--primary-brand);">
+                            <div style="color: var(--primary-brand); font-weight: bold; margin-bottom: 4px;">${r.file_path}</div>
+                            <div style="color: var(--text-muted); margin-bottom: 4px;">Symbol: ${r.symbol_name}</div>
+                            <pre style="margin: 0; background: rgba(0,0,0,0.5); padding: 4px; overflow-x: auto;">${r.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                        </div>`;
+                    });
+                    resContainer.innerHTML = html;
+                } else {
+                    resContainer.innerHTML = '<p style="color: #ef4444;">Search failed.</p>';
+                }
+            } catch (err) {
+                resContainer.innerHTML = '<p style="color: #ef4444;">Error fetching results.</p>';
+            }
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('history-modal').style.display = 'none';
+        }
+
+        function loadChatFromHistory(query, answer) {
+            closeHistoryModal();
+            const chatContainer = document.getElementById('chat-messages');
+            
+            // Reconstruct Operator Query
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="message operator">
+                    <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Operator</div>
+                    ${renderMarkdown(query)}
+                </div>
+            `);
+
+            // Reconstruct Neural Engine Answer
+            const safeAnswer = answer || "No response recorded.";
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="message ai">
+                    <div style="font-size: 12px; font-weight: 800; color: var(--primary-brand); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Neural Engine</div>
+                    <div class="ai-prose">${renderMarkdown(safeAnswer)}</div>
+                </div>
+            `);
+            
+            sessionStorage.setItem(chatHistoryKey, chatContainer.innerHTML);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function toggleInquiryHistory() {
+            if (!repoId) return;
+            const modal = document.getElementById('history-modal');
+            const list = document.getElementById('history-list');
+            
+            modal.style.display = 'flex';
+            list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 40px;">Loading history...</p>';
+            
+            try {
+                const userId = localStorage.getItem('auth_user_id');
+                const response = await fetch(`/api/repos/${repoId}/query-logs`, {
+                    headers: userId ? { 'X-User-Id': userId } : {}
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (!data.logs || data.logs.length === 0) {
+                        list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 40px;">No inquiry history found for this repository.</p>';
+                        return;
+                    }
+                    
+                    let html = '';
+                    data.logs.forEach(log => {
+                        const answerHtml = log.answer ? renderMarkdown(log.answer) : '<span style="color: var(--text-muted); font-style: italic;">No response recorded.</span>';
+                        
+                        html += `
+                        <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 16px; padding: 24px; margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle);">
+                                <div style="font-weight: 800; font-size: 16px; color: #0f172a;">
+                                    <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">Operator</span>
+                                    ${log.query}
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-muted); white-space: nowrap; margin-left: 16px;">${new Date(log.created_at).toLocaleString()}</div>
+                            </div>
+                            <div class="ai-prose" style="font-size: 14px; color: var(--text-secondary); line-height: 1.7;">
+                                <span style="color: var(--primary-brand); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; display: block; margin-bottom: 8px;">Neural Engine</span>
+                                ${answerHtml}
+                            </div>
+                        </div>`;
+                    });
+                    list.innerHTML = html;
+                } else {
+                    list.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 40px;">Failed to load history.</p>';
+                }
+            } catch (err) {
+                list.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 40px;">Error fetching history.</p>';
+            }
+        }
+
+        loadRepoInfo();
+        loadProfile();
+        
+        if (params.get('map') === 'true') {
+            setTimeout(toggleAnalysis, 500);
+        }
+    </script>
+    <script>
+        if (window.self !== window.top) {
+            const rail = document.querySelector('.nav-rail');
+            const sidebar = document.querySelector('.sidebar');
+            const appShell = document.querySelector('.app-shell');
+            if (rail) rail.style.display = 'none';
+            if (sidebar) sidebar.style.display = 'none';
+            if (appShell) {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (!urlParams.get('repo')) {
+                    appShell.style.gridTemplateColumns = '1fr';
+                } else {
+                    appShell.style.gridTemplateColumns = '1fr 340px';
+                }
+            }
+        }
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const elements = document.querySelectorAll(".admin-card, .repo-card, .stat-card, section, .cluster-node, .log-terminal, table, .complexity-map, .chat-interface");
+            elements.forEach((el, index) => {
+                el.style.opacity = "0";
+                el.style.transform = "translateY(10px)";
+                el.style.transition = "all 0.3s ease-out";
+                setTimeout(() => {
+                    el.style.opacity = "1";
+                    el.style.transform = "translateY(0)";
+                }, 10 + (index * 15)); // Staggered delay
+            });
+        });
+    </script>
+</body>
+
+</html>
+
+

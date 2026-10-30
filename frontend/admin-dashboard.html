@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Core Control | Codebase Knowledge AI</title>
+    <link rel="stylesheet" href="style.css?v=professional-v2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .admin-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 40px; }
+        .admin-card { background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: 24px; padding: 32px; transition: var(--transition-smooth); }
+        .admin-card:hover { border-color: var(--primary-brand); transform: translateY(-4px); box-shadow: var(--shadow-glow); }
+        .log-terminal { background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 24px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a5f3fc; line-height: 1.6; height: 350px; overflow-y: auto; }
+        .log-entry { margin-bottom: 8px; border-left: 2px solid transparent; padding-left: 12px; }
+        .log-entry.info { border-color: var(--primary-brand); }
+        .log-entry.warn { border-color: #fbbf24; color: #fbbf24; }
+        .log-entry.error { border-color: #ef4444; color: #ef4444; }
+        .badge-admin { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.1em; }
+        .cluster-node { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #ffffff; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border-subtle); }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="nav-rail">
+            <div class="rail-item active" style="margin-bottom: 24px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+            <div class="rail-item" onclick="window.location.href='user-dashboard.html'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div id="user-avatar" class="rail-item" style="margin-top: auto; background: var(--surface-card); border: 1px solid var(--border-subtle); font-weight: 800;">A</div>
+        </aside>
+
+        <aside class="sidebar">
+            <div style="margin-bottom: 40px; display: flex; align-items: center; gap: 16px;">
+                <div class="logo-box" style="width: 36px; height: 36px; background: #ef4444;">
+                    <i class="fas fa-shield-alt" style="font-size: 16px; color: #0f172a;"></i>
+                </div>
+                <div>
+                    <h1 style="font-size: 15px; font-weight: 800; letter-spacing: 0.05em; line-height: 1;">CORE CONTROL</h1>
+                    <span style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">ADMINISTRATIVE INTERFACE</span>
+                </div>
+            </div>
+
+            <nav style="display: flex; flex-direction: column; gap: 10px; margin-top: 56px;">
+                <button class="sidebar-nav-btn active"><i class="fas fa-server"></i> System Overview</button>
+                <button class="sidebar-nav-btn" onclick="window.location.href='admin-users.html'"><i class="fas fa-users-cog"></i> User Management</button>
+                <button class="sidebar-nav-btn" onclick="window.location.href='admin-analytics.html'"><i class="fas fa-database"></i> Database Health</button>
+                <button class="sidebar-nav-btn" onclick="window.location.href='admin-clusters.html'"><i class="fas fa-microchip"></i> Node Clusters</button>
+                <button class="sidebar-nav-btn" onclick="window.location.href='admin-settings.html'"><i class="fas fa-cog"></i> Global Settings</button>
+                <button class="sidebar-nav-btn" style="margin-top: 32px; color: var(--text-secondary); transition: all 0.2s;" onmouseover="this.style.color='#ef4444'; this.style.background='rgba(239, 68, 68, 0.05)'" onmouseout="this.style.color='var(--text-secondary)'; this.style.background='transparent'" onclick="window.location.href='login.html'"><i class="fas fa-power-off"></i> Terminate Admin Session</button>
+            </nav>
+        </aside>
+
+        <main class="main-content" style="padding: 60px; overflow-y: auto; flex: 1;">
+            <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 64px;">
+                <div>
+                    <h2 style="font-size: 40px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em;">Global System Nexus</h2>
+                    <p style="color: var(--text-secondary); font-size: 16px;">Logged in as: <strong id="admin-name-display" style="color: var(--primary-brand);">Admin</strong> &nbsp;|&nbsp; Comprehensive real-time monitoring of all users and repositories.</p>
+                </div>
+                <div style="display: flex; gap: 16px;">
+                    <div style="text-align: right; margin-right: 16px;">
+                        <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Session Uptime</div>
+                        <div id="server-uptime" style="font-size: 18px; font-weight: 700; color: #22c55e;">00h 00m 00s</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-stat-grid">
+                <div class="admin-card">
+                    <div style="color: var(--text-secondary); font-size: 13px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Total Users</div>
+                    <div id="stat-users" style="font-size: 36px; font-weight: 800;">-</div>
+                    <div style="color: var(--text-muted); font-size: 12px; font-weight: 600; margin-top: 12px;">Registered Accounts</div>
+                </div>
+                <div class="admin-card">
+                    <div style="color: var(--text-secondary); font-size: 13px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Global Repos</div>
+                    <div id="stat-repos" style="font-size: 36px; font-weight: 800;">-</div>
+                    <div style="color: #22c55e; font-size: 12px; font-weight: 600; margin-top: 12px;"><i class="fas fa-check-circle"></i> Indexed & Analyzed</div>
+                </div>
+                <div class="admin-card">
+                    <div style="color: var(--text-secondary); font-size: 13px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Total Queries</div>
+                    <div id="stat-queries" style="font-size: 36px; font-weight: 800;">-</div>
+                    <div style="color: var(--primary-brand); font-size: 12px; font-weight: 600; margin-top: 12px;">Across All Users</div>
+                </div>
+                <div class="admin-card">
+                    <div style="color: var(--text-secondary); font-size: 13px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Ready Instances</div>
+                    <div id="stat-ready" style="font-size: 36px; font-weight: 800;">-</div>
+                    <div style="color: #22c55e; font-size: 12px; font-weight: 600; margin-top: 12px;">System Healthy</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 40px;">
+
+                <section style="display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h3 style="font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 12px;">
+                            <i class="fas fa-book-open" style="color: var(--primary-brand);"></i> Global Library
+                        </h3>
+                        <div style="position: relative; width: 200px;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px;"></i>
+                            <input type="text" id="repo-search" placeholder="Filter by user..." onkeyup="filterRepos(this.value)" style="width: 100%; padding: 8px 12px 8px 32px; background: rgba(0,0,0,0.05); border: 1px solid rgba(0, 0, 0,0.1); border-radius: 8px; color: #0f172a; font-size: 12px;">
+                        </div>
+                    </div>
+                    <div id="admin-repo-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 350px; overflow-y: auto; padding-right: 8px;">
+                        <div style="color: var(--text-muted); font-size: 13px; font-style: italic;">Loading synchronized repositories...</div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 24px;">User Activity Breakdown</h3>
+                    <div id="user-activity-panel" style="display: flex; flex-direction: column; gap: 12px; max-height: 350px; overflow-y: auto;">
+                        <div style="color: var(--text-muted); font-size: 13px; font-style: italic;">Loading user activity...</div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // === ADMIN AUTH GUARD ===
+        (function() {
+            const userId = localStorage.getItem('auth_user_id');
+            const role   = localStorage.getItem('auth_user_role');
+            if (!userId || role !== 'admin') {
+                window.location.href = 'login.html';
+            }
+        })();
+
+        const ADMIN_ID = localStorage.getItem('auth_user_id');
+        const ADMIN_HEADERS = { 'X-User-Id': ADMIN_ID };
+
+        // Server start time (tracked per admin session)
+        const SESSION_START = Date.now();
+        function updateUptime() {
+            const elapsed = Math.floor((Date.now() - SESSION_START) / 1000);
+            const h = Math.floor(elapsed / 3600);
+            const m = Math.floor((elapsed % 3600) / 60);
+            const s = elapsed % 60;
+            document.getElementById('server-uptime').innerText =
+                `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+        }
+        setInterval(updateUptime, 1000);
+        updateUptime();
+
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/user/profile', { headers: ADMIN_HEADERS });
+                if (response.ok) {
+                    const profile = await response.json();
+                    if (profile && profile.full_name) {
+                        document.getElementById('user-avatar').innerText = profile.full_name.charAt(0).toUpperCase();
+                        document.getElementById('admin-name-display').innerText = profile.full_name;
+                    }
+                }
+            } catch (err) {}
+        }
+
+        let allGlobalRepos = [];
+
+        async function loadGlobalRepos() {
+            try {
+                const response = await fetch('/api/admin/repos-all', { headers: ADMIN_HEADERS });
+                let data = [];
+                if (response.ok) {
+                    data = await response.json();
+                } else {
+                    const fallback = await fetch('/api/repos', { headers: ADMIN_HEADERS });
+                    if (fallback.ok) data = await fallback.json();
+                }
+                
+                // Parse GitHub owners as fallback for system uploads
+                allGlobalRepos = data.map(r => {
+                    if ((!r.uploader_name || r.uploader_name === 'System Operator') && r.url && r.url.includes('github.com/')) {
+                        const parts = r.url.split('github.com/');
+                        if (parts.length > 1) {
+                            const pathParts = parts[1].split('/');
+                            if (pathParts.length > 0 && pathParts[0]) {
+                                r.uploader_name = pathParts[0]; // Set GitHub Owner as uploader
+                            }
+                        }
+                    }
+                    return r;
+                });
+                
+                renderGlobalRepos(allGlobalRepos);
+            } catch (err) {
+                document.getElementById('admin-repo-list').innerHTML = '<div style="color: #ef4444; font-size: 13px;">Failed to load global repository library.</div>';
+            }
+        }
+        
+        function filterRepos(term) {
+            term = term.toLowerCase().trim();
+            if (!term) {
+                renderGlobalRepos(allGlobalRepos);
+                return;
+            }
+            const filtered = allGlobalRepos.filter(r => 
+                (r.uploader_name && r.uploader_name.toLowerCase().includes(term)) ||
+                (r.uploader_email && r.uploader_email.toLowerCase().includes(term)) ||
+                (r.name && r.name.toLowerCase().includes(term)) ||
+                (r.url && r.url.toLowerCase().includes(term))
+            );
+            renderGlobalRepos(filtered);
+        }
+
+        function renderGlobalRepos(repos) {
+            const container = document.getElementById('admin-repo-list');
+            if (repos.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; font-style: italic;">No repositories found.</div>';
+                return;
+            }
+            
+            container.innerHTML = repos.map(r => `
+                <div style="background: linear-gradient(145deg, rgba(0, 0, 0,0.02) 0%, rgba(0, 0, 0,0.01) 100%); border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-code-branch" style="color: var(--text-secondary);"></i> ${r.name || r.id}
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                            <span><i class="fas fa-user-astronaut" style="color: var(--primary-brand); margin-right: 4px;"></i> ${r.uploader_name || 'System Operator'} ${r.uploader_email ? `(${r.uploader_email})` : ''}</span>
+                            <span style="opacity: 0.5;">|</span>
+                            <span><i class="fab fa-github" style="margin-right: 4px;"></i> ${r.url || 'Local Environment'}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.05em; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);"><div style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></div> ${(r.status || 'READY').toUpperCase()}</span>
+                        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(0, 0, 0,0.1); background: rgba(0,0,0,0.03); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(0, 0, 0,0.1)'" onmouseout="this.style.background='rgba(0, 0, 0,0.03)'" onclick="window.location.href='/api/repos/${r.id}/download'" title="Download Archive"><i class="fas fa-cloud-download-alt"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadStats() {
+            try {
+                const [overviewRes, usersRes] = await Promise.all([
+                    fetch('/api/admin/overview', { headers: ADMIN_HEADERS }),
+                    fetch('/api/admin/users', { headers: ADMIN_HEADERS })
+                ]);
+                
+                if (overviewRes.ok) {
+                    const data = await overviewRes.json();
+                    document.getElementById('stat-users').innerText = data.total_users || 0;
+                    document.getElementById('stat-repos').innerText = data.global_docs || 0;
+                    document.getElementById('stat-queries').innerText = data.total_queries || 0;
+                    document.getElementById('stat-ready').innerText = data.repo_status ? (data.repo_status.ready || 0) : 0;
+                }
+                
+                if (usersRes.ok) {
+                    const ud = await usersRes.json();
+                    const users = (ud.users || []).filter(u => u.role !== 'admin').slice(0, 8);
+                    const panel = document.getElementById('user-activity-panel');
+                    if (users.length === 0) {
+                        panel.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No regular users registered yet.</div>';
+                    } else {
+                        panel.innerHTML = users.map(u => {
+                            const queries = u.total_queries || 0;
+                            const maxQ = Math.max(...users.map(x => x.total_queries || 0), 1);
+                            const pct = Math.round((queries / maxQ) * 100);
+                            const initial = (u.full_name || u.email || '?').charAt(0).toUpperCase();
+                            return `
+                            <div class="cluster-node">
+                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-brand); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; color: #ffffff;">${initial}</div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.full_name || u.email}</div>
+                                        <div style="font-size: 11px; color: var(--text-muted);">${u.email} &nbsp;·&nbsp; ${queries} queries</div>
+                                        <div style="width: 100%; height: 3px; background: rgba(0,0,0,0.05); border-radius: 2px; margin-top: 6px;">
+                                            <div style="width: ${pct}%; height: 100%; background: var(--primary-brand); border-radius: 2px; transition: width 0.5s;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span style="font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 5px; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); margin-left: 12px; flex-shrink: 0;">${(u.status || 'ACTIVE').toUpperCase()}</span>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        loadProfile();
+        loadStats();
+        loadGlobalRepos();
+    </script>
+    <script>
+        if (window.self !== window.top) {
+            const rail = document.querySelector('.nav-rail');
+            const sidebar = document.querySelector('.sidebar');
+            const appShell = document.querySelector('.app-shell');
+            if (rail) rail.style.display = 'none';
+            if (sidebar) sidebar.style.display = 'none';
+            if (appShell) appShell.style.gridTemplateColumns = '1fr';
+        }
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const elements = document.querySelectorAll(".admin-card, .repo-card, .stat-card, section, .cluster-node, .log-terminal, table, .complexity-map, .chat-interface");
+            elements.forEach((el, index) => {
+                el.style.opacity = "0";
+                el.style.transform = "translateY(10px)";
+                el.style.transition = "all 0.3s ease-out";
+                setTimeout(() => {
+                    el.style.opacity = "1";
+                    el.style.transform = "translateY(0)";
+                }, 10 + (index * 15)); // Staggered delay
+            });
+        });
+    </script>
+</body>
+
+</html>
+
+
